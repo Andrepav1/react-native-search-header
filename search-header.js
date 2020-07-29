@@ -53,6 +53,8 @@ const {
     Platform
 } = ReactNative;
 
+import { MaterialIcons } from '@expo/vector-icons'; 
+
 const DEFAULT_ANIMATION_DURATION_MS = 300;
 
 const DEVICE_WIDTH = Dimensions.get(`window`).width;
@@ -146,30 +148,6 @@ const DEFAULT_SEARCH_HEADER_VIEW_STYLE = {
 };
 
 const DEFAULT_ICON_IMAGE_COMPONENTS = [{
-    name: `close`,
-    customStyle: {},
-    render: (style) => {
-        return (
-            <Image
-                resizeMode = 'cover'
-                source = { closeIcon }
-                style = { style }
-            />
-        );
-    }
-}, {
-    name: `hide`,
-    customStyle: {},
-    render: (style) => {
-        return (
-            <Image
-                resizeMode = 'cover'
-                source = { hideIcon }
-                style = { style }
-            />
-        );
-    }
-}, {
     name: `pin`,
     customStyle: {},
     render: (style) => {
@@ -206,18 +184,34 @@ const DEFAULT_ICON_IMAGE_COMPONENTS = [{
         );
     }
 }, {
-    name: `recall`,
+    name: `tv`,
     customStyle: {},
     render: (style) => {
-        return (
-            <Image
-                resizeMode = 'cover'
-                source = { recallIcon }
-                style = { style }
-            />
-        );
+      return (
+        <MaterialIcons name="live-tv" size={24} color={style.darkMode?"#FFFFFFCC":"#000000CC"} style={{ left: 3, bottom: 2, margin: 2 }}/>
+        // <MaterialIcons name="live-tv" size={24} color="black" style={{}}/>
+      );
     }
-}];
+}, {
+    name: `movie`,
+    customStyle: {},
+    render: (style) => {
+      return (
+        <MaterialIcons name="movie" size={24} color={style.darkMode?"#FFFFFFCC":"#000000CC"} style={{ left: 3, bottom: 0, margin: 2 }}/>
+        // <MaterialIcons name="live-tv" size={24} color="black" style={{}}/>
+      );
+    }
+}, {
+    name: `person`,
+    customStyle: {},
+    render: (style) => {
+      return (
+        <MaterialIcons name="face" size={24} color={style.darkMode?"#FFFFFFCC":"#000000CC"} style={{ left: 3, margin: 2 }}/>
+        // <MaterialIcons name="live-tv" size={24} color="black" style={{}}/>
+      );
+    }
+},
+];
 
 const readjustStyle = (newStyle = {
     inputColor: DEFAULT_SEARCH_HEADER_VIEW_STYLE.input.color,
@@ -320,6 +314,7 @@ const SearchHeaderWithReactHooks = ({
     iconImageComponents = DEFAULT_ICON_IMAGE_COMPONENTS,
     onClearSuggesstion = () => false,
     onGetAutocompletions = () => [],
+    onSuggestionPressed = () => null,
     onClear = () => null,
     onSearch = () => null,
     onEnteringSearch = () => null,
@@ -375,16 +370,15 @@ const SearchHeaderWithReactHooks = ({
         if (enableSuggestion) {
             const fetchSearchAutocompletions = async function () {
                 const autocompleteTexts = await onGetAutocompletions(value);
+
                 if (Array.isArray(autocompleteTexts) && autocompleteTexts.length) {
                     setSuggestion({
                         ...suggestion,
-                        autocompletes: [
-                            // ...new Set(autocompleteTexts.filter((text) => typeof text === `string`).map((text) => text.replace(/\s/g, ``)))
-                            ...new Set(autocompleteTexts.filter((text) => typeof text === `string`))
-                        ].map((text) => {
+                        autocompletes: autocompleteTexts.map(({id,media_type,value}) => {
                             return {
-                                suggestionType: `autocompletion`,
-                                value: text
+                              id: id,
+                              suggestionType: media_type,
+                              value: value
                             };
                         })
                     });
@@ -718,57 +712,8 @@ const SearchHeaderWithReactHooks = ({
                                 <TouchableOpacity
                                     key = { listData.key }
                                     onPress = {() => {
-                                        if (!suggestion.histories.some((_entry) => _entry.value === entry.value) &&
-                                            !pinnedSuggestions.some((value) => value === entry.value)) {
-                                            let {
-                                                historyEntryRollOverCount,
-                                                histories
-                                            } = suggestion;
-
-                                            if (histories.length >= historyEntryRollOverCount) {
-                                                histories.pop();
-                                            }
-                                            histories.push({
-                                                suggestionType: `history`,
-                                                value: entry.value,
-                                                timestamp: new Date().getTime()
-                                            });
-                                            setInput({
-                                                ...input,
-                                                value: entry.value,
-                                                valueChanged: input.value !== entry.value,
-                                                focused: false
-                                            });
-                                            setSuggestion({
-                                                ...suggestion,
-                                                visible: false,
-                                                autocompletes: [],
-                                                histories
-                                            });
-                                        } else {
-                                            setInput({
-                                                ...input,
-                                                value: entry.value,
-                                                valueChanged: input.value !== entry.value,
-                                                focused: false
-                                            });
-                                            setSuggestion({
-                                                ...suggestion,
-                                                visible: false,
-                                                autocompletes: []
-                                            });
-                                        }
-
-                                        onEnteringSearch({
-                                            nativeEvent: {
-                                                text: entry.value
-                                            }
-                                        });
-                                        onSearch({
-                                            nativeEvent: {
-                                                text: entry.value
-                                            }
-                                        });
+                                      onSuggestionPressed(entry);
+                                      clear();
                                     }}>
                                     <View style = {{
                                         flexDirection: `row`,
@@ -782,6 +727,12 @@ const SearchHeaderWithReactHooks = ({
                                                     return iconImageComponent.name === `history`;
                                                 } else if (entry.suggestionType === `pin`) {
                                                     return iconImageComponent.name === `pin`;
+                                                } else if (entry.suggestionType === `tv`) {
+                                                    return iconImageComponent.name === `tv`;
+                                                } else if (entry.suggestionType === `movie`) {
+                                                    return iconImageComponent.name === `movie`;
+                                                } else if (entry.suggestionType === `person`) {
+                                                    return iconImageComponent.name === `person`;
                                                 }
                                                 return iconImageComponent.name === `search`;
                                             }).map((iconImageComponent) => {
@@ -867,6 +818,7 @@ ForwardComponent.propTypes = {
     iconImageComponents: PropTypes.arrayOf(PropTypes.object),
     onClearSuggesstion: PropTypes.func,
     onGetAutocompletions: PropTypes.func,
+    onSuggestionPressed: PropTypes.func,
     onClear: PropTypes.func,
     onSearch: PropTypes.func,
     onEnteringSearch: PropTypes.func,
