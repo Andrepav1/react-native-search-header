@@ -428,58 +428,14 @@ const SearchHeaderWithReactHooks = ({
         });
     };
     const _onSubmitEditing = (event) => {
-        const value = event.nativeEvent.text;
+      clear();
 
-        if (enableSuggestion) {
-            if (value !== ``) {
-                if (!suggestion.histories.some((entry) => entry.value === value) &&
-                    !pinnedSuggestions.some((_value) => _value === value)) {
-                    let {
-                        historyEntryRollOverCount,
-                        histories
-                    } = suggestion;
-
-                    if (histories.length >= historyEntryRollOverCount) {
-                        histories.pop();
-                    }
-                    histories.push({
-                        suggestionType: `history`,
-                        value,
-                        timestamp: new Date().getTime()
-                    });
-
-                    setSuggestion({
-                        ...suggestion,
-                        visible: false,
-                        autocompletes: [],
-                        histories
-                    });
-                } else {
-                    setSuggestion({
-                        ...suggestion,
-                        visible: false,
-                        autocompletes: []
-                    });
-                }
-                onSearch({
-                    nativeEvent: {
-                        text: value
-                    }
-                });
-            } else {
-                setSuggestion({
-                    ...suggestion,
-                    visible: false,
-                    autocompletes: []
-                });
-            }
-        } else {
-            onSearch({
-                nativeEvent: {
-                    text: value
-                }
-            });
+      onSearch({
+        nativeEvent: {
+          text: event.nativeEvent.text
         }
+      });
+      
     };
     const isHidden = () => !visible;
     const hide = () => {
@@ -529,18 +485,18 @@ const SearchHeaderWithReactHooks = ({
         }
     };
     const clear = () => {
-        setFiltersVisible(true);
-        setInput({
-            ...input,
-            value: ``,
-            valueChanged: true
-        });
-        setSuggestion({
-            ...suggestion,
-            autocompletes: []
-        });
+      setFiltersVisible(true);
+      setInput({
+          ...input,
+          value: ``,
+          valueChanged: true
+      });
+      setSuggestion({
+          ...suggestion,
+          autocompletes: []
+      });
 
-        onClear();
+      onClear();
     };
     const clearSuggestion = () => {
         setSuggestion({
